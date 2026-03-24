@@ -5,8 +5,6 @@ const bodyParser = require('body-parser');
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
-
-// GỌI CÁC ROUTES ĐÃ CHIA MỤC
 const authRoutes = require('./routes/auth');
 const apiRoutes = require('./routes/api');
 const naptheRoutes = require('./routes/napthe');

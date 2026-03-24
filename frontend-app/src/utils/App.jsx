@@ -3,24 +3,25 @@ import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
 
 // IMPORT CÁC TRANG
-import HistoryPage from "./HistoryPage.jsx";
-import ProductDetail from "./ProductDetail.jsx";
-import CategoryPage from "./CategoryPage.jsx";
-import BlindBoxPage from "./BlindBoxPage.jsx";
-import ShopContent from "./ShopContent.jsx";
-import ServicesPage from "./ServicesPage.jsx";
-import AdminPanel from "./AdminPanel.jsx";
+import HistoryPage from "./src/page/HistoryPage.jsx";
+import ProductDetail from "./src/page/ProductDetail.jsx";
+import CategoryPage from "./src/page/CategoryPage.jsx";
+import BlindBoxPage from "./src/page/BlindBoxPage.jsx";
+import ShopContent from "./src/page/ShopContent.jsx";
+import ServicesPage from "./src/page/ServicesPage.jsx";
+import AdminPanel from "./src/page/AdminPanel.jsx";
 
 // IMPORT CÁC COMPONENT
-import Header from "./Header.jsx";
-import Footer from "./Footer.jsx";
-import { RegisterModal, LoginModal, ProfileModal } from "./AuthModals.jsx";
+import Header from "./page/layout/Header.jsx";
+import Footer from "./page/layout/Footer.jsx";
+import { RegisterModal, LoginModal, ProfileModal } from "../page/AuthModals.jsx";
 
 function App() {
   const [products, setProducts] = useState([]);
   const [user, setUser] = useState(null);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
+  const [isShaking, setIsShaking] = useState(false); 
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('napThe');
   const [topDepositors, setTopDepositors] = useState([]); 
@@ -53,10 +54,15 @@ function App() {
     }, 2000);
   };
 
-  const handleRegisterSubmit = async (e) => {
-    e.preventDefault();
-    if (inputCaptcha.toUpperCase() !== captchaCode) {
-      toast.error("Sai mã Captcha!"); return;
+const handleRegisterSubmit = async (e) => {
+  e.preventDefault();
+  if (inputCaptcha.toUpperCase() !== captchaCode) {
+    // --- BỔ SUNG ĐOẠN NÀY ---
+    setIsShaking(true); // Bật rung
+    setTimeout(() => setIsShaking(false), 500); // Tắt rung sau 0.5 giây
+    // -----------------------
+    toast.error("Sai mã Captcha!"); 
+    return;
     }
     const loadId = toast.loading("Đang đăng ký...");
     try {

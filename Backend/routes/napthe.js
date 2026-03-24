@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
-const axios = require('axios'); // Nhớ npm install axios
+const axios = require('axios'); 
 
-const API_KEY = "KEY_CUA_HOANG_DIIEN_VAO_DAY"; // Dán Key của bạn vào
+const API_KEY = "KEY_CUA_HOANG_DIIEN_VAO_DAY"; 
 
 router.post('/send-card', async (req, res) => {
     const { telco, amount, serial, code, username } = req.body;
