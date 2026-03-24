@@ -1,0 +1,57 @@
+@import "tailwindcss";
+
+/* 1. HIỆU ỨNG CHỮ CHẠY (MARQUEE) */
+@keyframes marquee {
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+
+.animate-marquee {
+  display: inline-block;
+  animation: marquee 20s linear infinite;
+}
+
+/* 2. CÀI ĐẶT CƠ BẢN CHO BODY */
+body {
+  background-color: #e3f2fd;
+  color: #333;
+  font-family: sans-serif;
+}
+
+/* 3. HIỆU ỨNG CHỮ BỐC LỬA (FLAME TEXT) */
+@keyframes bocLua {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@layer utilities {
+  .animate-boc-lua {
+    /* Tạo màu nền lửa rực rỡ */
+    background-image: linear-gradient(
+      -45deg,
+      #ff0000, /* Đỏ */
+      #ff8c00, /* Cam */
+      #ffd700, /* Vàng */
+      #ff4500  /* Đỏ cam */
+    );
+    background-size: 400% 400%;
+    animation: bocLua 3s ease infinite;
+
+    /* Cắt nền theo hình chữ */
+    -webkit-background-clip: text;
+    background-clip: text;
+
+    /* Làm chữ trong suốt để lộ nền lửa bên dưới */
+    -webkit-text-fill-color: transparent; 
+    color: transparent;
+
+    /* Đổ bóng hào quang rực cháy quanh chữ */
+    filter: drop-shadow(0 2px 4px rgba(234, 88, 12, 0.9));
+    
+    /* Đảm bảo hiển thị chuẩn */
+    display: inline-block; 
+    width: 100%;
+    text-align: center;
+  }
+}
