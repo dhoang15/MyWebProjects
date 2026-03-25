@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useParams } from 'react-router-dom';
-import ProductCard from '../components/ProductCard'; // GỌI NÓ LÊN
+import ProductCard from '@/components/ProductCard'; // GỌI NÓ LÊN
 
 const CategoryPage = ({ products, handleBuy }) => {
   const { categoryName } = useParams();

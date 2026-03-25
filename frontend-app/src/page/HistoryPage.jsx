@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import HistoryRow from '../components/HistoryRow'; // GỌI NÓ LÊN
+import HistoryRow from '@/hictory/hictoryrows'; // GỌI NÓ LÊN
 
 const HistoryPage = ({ user }) => {
   const [history, setHistory] = useState([]);

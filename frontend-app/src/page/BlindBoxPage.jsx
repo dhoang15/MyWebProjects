@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
-import BoxGrid from './src/blindbox/BoxGrid'; // Import con
-import SideRules from './src/blindbox/SideRules'; // Import con
+import BoxGrid from '@/blindbox/BoxGrid'; 
+import SideRules from '@/blindbox/SideRules'; 
 
 const BlindBoxPage = ({ user, setUser, products, setProducts }) => {
   const [isSpinning, setIsSpinning] = useState(false);

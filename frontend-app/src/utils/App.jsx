@@ -3,18 +3,18 @@ import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
 
 // IMPORT CÁC TRANG
-import HistoryPage from "./src/page/HistoryPage.jsx";
-import ProductDetail from "./src/page/ProductDetail.jsx";
-import CategoryPage from "./src/page/CategoryPage.jsx";
-import BlindBoxPage from "./src/page/BlindBoxPage.jsx";
-import ShopContent from "./src/page/ShopContent.jsx";
-import ServicesPage from "./src/page/ServicesPage.jsx";
-import AdminPanel from "./src/page/AdminPanel.jsx";
+import HistoryPage from "@/page/HistoryPage.jsx";
+import ProductDetail from "@/page/ProductDetail.jsx";
+import CategoryPage from "@/page/CategoryPage.jsx";
+import BlindBoxPage from "@/page/BlindBoxPage.jsx";
+import ShopContent from "@/page/ShopContent.jsx";
+import ServicesPage from "@/page/ServicesPage.jsx";
+import AdminPanel from "@/page/AdminPanel.jsx";
 
 // IMPORT CÁC COMPONENT
-import Header from "./page/layout/Header.jsx";
-import Footer from "./page/layout/Footer.jsx";
-import { RegisterModal, LoginModal, ProfileModal } from "../page/AuthModals.jsx";
+import Header from "@/layout/Header.jsx";
+import Footer from "@/layout/Footer.jsx";
+import { LoginModal, RegisterModal, ProfileModal } from "@/page/AuthModals";
 
 function App() {
   const [products, setProducts] = useState([]);
@@ -92,6 +92,44 @@ const handleRegisterSubmit = async (e) => {
       } else { toast.error("Sai tài khoản/mật khẩu!", { id: loadId }); }
     } catch (error) { toast.error("Lỗi kết nối!", { id: loadId }); }
   };
+  // --- DÁN ĐOẠN NÀY VÀO TRƯỚC LỆNH RETURN ---
+const handleBuy = async (item) => {
+  if (!item || !item.id) {
+    toast.error("Sản phẩm lỗi!");
+    return;
+  }
+  if (!user) {
+    toast.error("Vui lòng đăng nhập để mua Acc!");
+    setIsLoginOpen(true);
+    return;
+  }
+
+  const loadId = toast.loading("Đang xử lý giao dịch...");
+  try {
+    const res = await fetch('http://localhost:5000/api/buy', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        user_id: user.id, 
+        product_id: item.id, 
+        price: item.price 
+      })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      setUser({ ...user, balance: data.newBalance });
+      toast.success("Mua Acc thành công! Check lịch sử nhé.", { id: loadId });
+      // Load lại danh sách sản phẩm để cập nhật trạng thái "Đã bán"
+      fetch('http://localhost:5000/api/products')
+        .then(res => res.json())
+        .then(data => setProducts(data));
+    } else {
+      toast.error(data.message || "Giao dịch thất bại!", { id: loadId });
+    }
+  } catch (error) {
+    toast.error("Lỗi kết nối máy chủ!", { id: loadId });
+  }
+};
 
   return (
     <Router>
@@ -190,15 +228,15 @@ const handleRegisterSubmit = async (e) => {
         </div>
 
         <main className="max-w-7xl mx-auto p-4 mt-4">
-             <Routes>
-                <Route path="/" element={<ShopContent products={products} handleBuy={(item) => console.log(item)} />} />
-                <Route path="/category/:categoryName" element={<CategoryPage products={products} handleBuy={(item) => console.log(item)} />} />
-                <Route path="/tui-mu" element={<BlindBoxPage user={user} setUser={setUser} products={products} setProducts={setProducts} />} />
-                <Route path="/product/:id" element={<ProductDetail products={products} handleBuy={(item) => console.log(item)} />} />
-                <Route path="/dich-vu" element={<ServicesPage />} />
-                <Route path="/history" element={<HistoryPage user={user} />} />
-                <Route path="/quan-tri-vien-vip" element={<AdminPanel />} />
-             </Routes>
+<Routes>
+  <Route path="/" element={<ShopContent products={products} handleBuy={handleBuy} />} />
+  <Route path="/category/:categoryName" element={<CategoryPage products={products} handleBuy={handleBuy} />} />
+  <Route path="/tui-mu" element={<BlindBoxPage user={user} setUser={setUser} products={products} setProducts={setProducts} />} />
+  <Route path="/product/:id" element={<ProductDetail products={products} handleBuy={handleBuy} />} />
+  <Route path="/dich-vu" element={<ServicesPage />} />
+  <Route path="/history" element={<HistoryPage user={user} />} />
+  <Route path="/quan-tri-vien-vip" element={<AdminPanel />} />
+</Routes>
         </main>
 
         <Footer />

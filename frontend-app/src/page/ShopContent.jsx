@@ -1,6 +1,6 @@
 import React from 'react';
-import { shopData } from '../data/shopData';
-import PackageCard from '../components/PackageCard';
+import { shopData } from '@/data/DataShop'; // GỌI DỮ LIỆU DANH MỤC VÀ GÓI HÀNG
+import PackageCard from '@/components/PackageCard';
 
 const ShopContent = ({ products }) => {
   return (

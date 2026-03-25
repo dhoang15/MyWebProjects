@@ -3,13 +3,14 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
 
 // IMPORT COMPONENTS ĐÃ TÁCH
-import Header from '../layout/Header';
-import Footer from '../layout/Footer';
-import { LoginModal, RegisterModal, ProfileModal } from './components/auth';
+import Header from "@/layout/Header.jsx";
+import Footer from "@/layout/Footer.jsx";
+// AuthModals nãy Hoàng để ở src/page nên dùng @/page là đúng
+import { RegisterModal, LoginModal, ProfileModal } from "@/page/AuthModals.jsx";
 
 // IMPORT PAGES
-import ShopContent from './pages/ShopContent';
-import CategoryPage from './pages/CategoryPage';
+import ShopContent from "@/page/ShopContent.jsx";
+import CategoryPage from '@/page/CategoryPage.jsx';
 // ... các trang khác
 
 function App() {

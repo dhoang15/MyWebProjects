@@ -1,3 +1,5 @@
+import React from 'react';
+
 export const ProfileModal = ({ isOpen, user, onClose }) => {
   if (!isOpen || !user) return null;
   return (
@@ -9,7 +11,6 @@ export const ProfileModal = ({ isOpen, user, onClose }) => {
             <span className="text-3xl font-black text-black uppercase">{user.username.charAt(0)}</span>
           </div>
           <h2 className="text-xl font-black text-black uppercase italic">{user.username}</h2>
-          <p className="text-[10px] font-bold text-gray-500">THÀNH VIÊN CHIN SHOP</p>
         </div>
         <div className="space-y-3 bg-gray-50 p-4 rounded-2xl border-2 border-black font-bold text-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
           <div className="flex justify-between border-b-2 border-gray-200 pb-2">
