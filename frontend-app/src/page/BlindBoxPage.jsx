@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
-import BoxGrid from '@/blindbox/BoxGrid'; 
+import BoxGrid from '@/Blindbox/BoxGrid'; 
 import SideRules from '@/blindbox/SideRules'; 
 
 const BlindBoxPage = ({ user, setUser, products, setProducts }) => {
