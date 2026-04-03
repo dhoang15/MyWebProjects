@@ -17,7 +17,7 @@ import Footer from "@/layout/Footer.jsx";
 import { LoginModal, RegisterModal, ProfileModal } from "@/page/AuthModals";
 
 // 🛠️ CẤU HÌNH API URL (Thay link này khi up lên Render)
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_URL = import.meta.env.VITE_API_URL || 'https://mywebprojects-rxl0.onrender.com/';
 
 function App() {
   const [products, setProducts] = useState([]);

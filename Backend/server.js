@@ -33,7 +33,9 @@ app.use((req, res, next) => {
 
 // Cho phép Frontend của bạn truy cập
 app.use(cors({
-    origin: 'https://chinshop-weld.vercel.app', // Thay bằng link Vercel của bạn
+    origin: ['https://chinshop-weld.vercel.app',
+        'http://localhost:3000' // Thay bằng link Vercel của bạn
+    ],
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true
 }));
