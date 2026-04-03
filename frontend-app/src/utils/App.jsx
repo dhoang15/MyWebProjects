@@ -32,14 +32,14 @@ function App() {
   const [inputCaptcha, setInputCaptcha] = useState('');
   const [cardData, setCardData] = useState({ type: 'VIETTEL', amount: '10000', pin: '', serial: '' });
 
-  // 🌍 CẤU HÌNH URL SẠCH (Xử lý lỗi dấu gạch chéo //)
+  // 🌍 1. CẤU HÌNH URL SẠCH (Fix lỗi dấu gạch chéo // và 404)
   const getCleanUrl = () => {
     const rawUrl = import.meta.env.VITE_API_URL || 'https://mywebprojects-rxl0.onrender.com';
-    return rawUrl.replace(/\/$/, ''); // Luôn xóa dấu / ở cuối link
+    return rawUrl.replace(/\/$/, ''); // Luôn xóa dấu / ở cuối link để tránh lỗi //api
   };
   const API_URL = getCleanUrl();
 
-  // 🚀 1. TỰ ĐỘNG ĐĂNG NHẬP VÀ FETCH DỮ LIỆU AN TOÀN
+  // 🚀 2. TỰ ĐỘNG ĐĂNG NHẬP VÀ FETCH DỮ LIỆU AN TOÀN
   useEffect(() => {
     // Phục hồi User từ LocalStorage
     const savedData = localStorage.getItem('userData'); 
@@ -47,17 +47,17 @@ function App() {
       try { setUser(JSON.parse(savedData)); } catch (e) { localStorage.removeItem('userData'); }
     }
 
-    // Hàm fetch sản phẩm (Fix lỗi .filter)
+    // Hàm fetch sản phẩm (Fix triệt để lỗi .filter is not a function)
     const loadProducts = async () => {
       try {
         const res = await fetch(`${API_URL}/api/products`);
-        if (!res.ok) throw new Error("Server trả lỗi 404/500");
+        if (!res.ok) throw new Error("API trả lỗi 404/500");
         const data = await res.json();
-        // CỰC QUAN TRỌNG: Chỉ set nếu là mảng
+        // BẢO VỆ: Chỉ set nếu data là một Mảng thực thụ
         setProducts(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error("Lỗi Fetch Products:", error);
-        setProducts([]); // Trả về mảng rỗng để web không bị trắng trang
+        setProducts([]); // Trả về mảng rỗng để web không bị trắng trang/lỗi filter
       }
     };
 
@@ -68,6 +68,7 @@ function App() {
         if (res.ok) {
           const data = await res.json();
           if (Array.isArray(data)) setTopDepositors(data);
+          else setTopDepositors([]);
         }
       } catch (e) { setTopDepositors([]); }
     };
@@ -76,26 +77,28 @@ function App() {
     loadTop();
   }, [API_URL]);
 
-  // 🚪 2. XỬ LÝ ĐĂNG XUẤT
+  // 🚪 3. XỬ LÝ ĐĂNG XUẤT
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('userData');
     setUser(null);
-    toast.success("Đăng xuất thành công!");
+    toast.success("Đã thoát tài khoản!");
   };
 
-  // 💳 3. XỬ LÝ NẠP THẺ
+  // 💳 4. XỬ LÝ NẠP THẺ (Demo)
   const handleCardSubmit = async (e) => {
     e.preventDefault();
     if (!user) return toast.error("Vui lòng đăng nhập!");
+    if (!cardData.pin || !cardData.serial) return toast.error("Vui lòng nhập đủ mã thẻ!");
+    
     const loadId = toast.loading("Đang gửi thẻ...");
     setTimeout(() => {
-      toast.success("Gửi thẻ thành công!", { id: loadId });
+      toast.success("Gửi thẻ thành công! Vui lòng chờ duyệt.", { id: loadId });
       setCardData({ ...cardData, pin: '', serial: '' });
     }, 2000);
   };
 
-  // 📝 4. XỬ LÝ ĐĂNG KÝ
+  // 📝 5. XỬ LÝ ĐĂNG KÝ
   const handleRegisterSubmit = async (e) => {
     e.preventDefault();
     if (inputCaptcha.toUpperCase() !== captchaCode) {
@@ -115,21 +118,25 @@ function App() {
       if (res.ok) {
         toast.success("Đăng ký thành công!", { id: loadId });
         setIsRegisterOpen(false); setIsLoginOpen(true);
+        setRegForm({ username: '', password: '', email: '' });
       } else { 
         toast.error(data.message || "Đăng ký thất bại!", { id: loadId }); 
       }
     } catch (error) { toast.error("Lỗi kết nối máy chủ!", { id: loadId }); }
   };
 
-  // 🔑 5. XỬ LÝ ĐĂNG NHẬP
+  // 🔑 6. XỬ LÝ ĐĂNG NHẬP
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
-    const loadId = toast.loading("Đang vào shop...");
+    const loadId = toast.loading("Đang đăng nhập...");
     try {
       const res = await fetch(`${API_URL}/api/auth/login`, {
         method: 'POST', 
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: loginForm.username, password: loginForm.password })
+        body: JSON.stringify({
+          email: loginForm.username, // Backend yêu cầu email, form React dùng field 'username'
+          password: loginForm.password
+        })
       });
       const data = await res.json();
       if (res.ok) {
@@ -137,15 +144,18 @@ function App() {
         localStorage.setItem('userData', JSON.stringify(data));
         setUser(data); 
         setIsLoginOpen(false);
+        setLoginForm({ username: '', password: '' });
         toast.success(`Chào mừng ${data.username}!`, { id: loadId });
-      } else { toast.error(data.message || "Sai tài khoản/mật khẩu!", { id: loadId }); }
+      } else { 
+        toast.error(data.message || "Sai tài khoản/mật khẩu!", { id: loadId }); 
+      }
     } catch (error) { toast.error("Lỗi kết nối máy chủ!", { id: loadId }); }
   };
 
-  // 🛒 6. XỬ LÝ MUA ACC
+  // 🛒 7. XỬ LÝ MUA ACC (Gửi kèm Token xác thực)
   const handleBuy = async (item) => {
     if (!user) { toast.error("Vui lòng đăng nhập!"); setIsLoginOpen(true); return; }
-    const loadId = toast.loading("Đang xử lý...");
+    const loadId = toast.loading("Đang thanh toán...");
     try {
       const res = await fetch(`${API_URL}/api/buy`, {
         method: 'POST',
@@ -159,8 +169,11 @@ function App() {
       if (res.ok) {
         setUser({ ...user, balance: data.newBalance });
         toast.success("Mua Acc thành công!", { id: loadId });
-        fetch(`${API_URL}/api/products`).then(r => r.json()).then(setProducts);
-      } else { toast.error(data.message || "Thất bại!", { id: loadId }); }
+        // Cập nhật lại danh sách sản phẩm sau khi mua
+        fetch(`${API_URL}/api/products`).then(r => r.json()).then(setProducts).catch(() => {});
+      } else { 
+        toast.error(data.message || "Giao dịch thất bại!", { id: loadId }); 
+      }
     } catch (error) { toast.error("Lỗi kết nối!", { id: loadId }); }
   };
 
@@ -168,27 +181,30 @@ function App() {
     <Router>
       <div className="min-h-screen pb-20 font-sans bg-fixed bg-cover bg-center" style={{ backgroundImage: "url('https://cdn.pixabay.com/photo/2016/01/27/15/25/space-1164579_1280.png')" }}>
         <Toaster position="top-center" />
+        
         <Header user={user} setIsRegisterOpen={setIsRegisterOpen} setIsLoginOpen={setIsLoginOpen} setIsProfileOpen={setIsProfileOpen} handleLogout={handleLogout} />
 
         <div className="max-w-7xl mx-auto px-4 mt-6">
            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              
+              {/* SIDEBAR: NẠP THẺ / ATM */}
               <div className="lg:col-span-4 bg-white rounded-lg shadow-xl overflow-hidden flex flex-col border border-gray-200 h-[380px] italic font-bold">
                  <div className="flex bg-gray-200">
                     <button onClick={() => setActiveTab('napThe')} className={`flex-1 py-3 text-[11px] uppercase ${activeTab === 'napThe' ? 'bg-red-600 text-white' : ''}`}>Nạp thẻ</button>
                     <button onClick={() => setActiveTab('chuyenKhoan')} className={`flex-1 py-3 text-[11px] uppercase ${activeTab === 'chuyenKhoan' ? 'bg-red-600 text-white' : ''}`}>ATM/MOMO</button>
                     <button onClick={() => setActiveTab('topNap')} className={`flex-1 py-3 text-[11px] uppercase ${activeTab === 'topNap' ? 'bg-red-600 text-white' : ''}`}>Top Nạp</button>
                  </div>
+                 
                  <div className="p-5 flex-1 bg-white overflow-y-auto custom-scrollbar border-b-2 border-black">
                   {activeTab === 'napThe' && (
                     <form onSubmit={handleCardSubmit} className="space-y-3 animate-in slide-in-from-left duration-300">
-                      <select value={cardData.type} onChange={(e) => setCardData({...cardData, type: e.target.value})} className="w-full bg-gray-50 border-2 border-black p-2 rounded-xl text-xs font-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] outline-none text-black">
+                      <select value={cardData.type} onChange={(e) => setCardData({...cardData, type: e.target.value})} className="w-full bg-gray-50 border-2 border-black p-2 rounded-xl text-xs font-black text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] outline-none">
                         <option value="VIETTEL">VIETTEL</option>
                         <option value="MOBIFONE">MOBIFONE</option>
                         <option value="VINAPHONE">VINAPHONE</option>
                         <option value="GARENA">GARENA</option>
-                        <option value="ZING">ZING</option>
                       </select>
-                      <select value={cardData.amount} onChange={(e) => setCardData({...cardData, amount: e.target.value})} className="w-full bg-gray-50 border-2 border-black p-2 rounded-xl text-xs font-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] outline-none text-black">
+                      <select value={cardData.amount} onChange={(e) => setCardData({...cardData, amount: e.target.value})} className="w-full bg-gray-50 border-2 border-black p-2 rounded-xl text-xs font-black text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] outline-none">
                         <option value="10000">10,000đ</option>
                         <option value="50000">50,000đ</option>
                         <option value="100000">100,000đ</option>
@@ -201,6 +217,7 @@ function App() {
                       <button type="submit" className="w-full bg-red-600 text-white font-black py-3 rounded-2xl text-xs uppercase shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all border-2 border-black">🔥 NẠP THẺ NGAY</button>
                     </form>
                   )}
+
                   {activeTab === 'chuyenKhoan' && (
                     <div className="space-y-3 animate-in zoom-in duration-300">
                       <div className="bg-blue-600 border-2 border-black p-4 rounded-2xl shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-white">
@@ -217,6 +234,7 @@ function App() {
                       </div>
                     </div>
                   )}
+
                   {activeTab === 'topNap' && (
                     <div className="space-y-2 animate-in slide-in-from-right duration-300">
                       {topDepositors.map((item, i) => (
@@ -232,6 +250,8 @@ function App() {
                   )}
                  </div>
               </div>
+
+              {/* BANNER CHÍNH */}
               <div className="lg:col-span-8 rounded-lg overflow-hidden relative h-[380px] bg-red-600 flex items-center justify-center">
                  <img src="/banner.png" className="absolute inset-0 w-full h-full object-cover opacity-80" alt="banner" />
                  <h1 className="relative z-10 text-6xl md:text-8xl font-black italic text-white drop-shadow-2xl animate-pulse">CHIN SHOP</h1>
@@ -239,6 +259,7 @@ function App() {
            </div>
         </div>
 
+        {/* ROUTES NỘI DUNG TRANG */}
         <main className="max-w-7xl mx-auto p-4 mt-4">
           <Routes>
             <Route path="/" element={<ShopContent products={products} handleBuy={handleBuy} />} />
@@ -250,10 +271,31 @@ function App() {
             <Route path="/quan-tri-vien-vip" element={<AdminPanel />} />
           </Routes>
         </main>
+
         <Footer />
-        <RegisterModal isOpen={isRegisterOpen} onClose={() => setIsRegisterOpen(false)} onSubmit={handleRegisterSubmit} regForm={regForm} setRegForm={setRegForm} captchaCode={captchaCode} generateCaptcha={() => setCaptchaCode(Math.random().toString(36).substring(2, 8).toUpperCase())} inputCaptcha={inputCaptcha} setInputCaptcha={setInputCaptcha} isShaking={isShaking} />
-        <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} onSubmit={handleLoginSubmit} loginForm={loginForm} setLoginForm={setLoginForm} />
-        <ProfileModal isOpen={isProfileOpen} user={user} onClose={() => setIsProfileOpen(false)} />
+
+        {/* HỆ THỐNG MODAL (LOGIN/REGISTER/PROFILE) */}
+        <RegisterModal 
+          isOpen={isRegisterOpen} 
+          onClose={() => setIsRegisterOpen(false)} 
+          onSubmit={handleRegisterSubmit} 
+          regForm={regForm} setRegForm={setRegForm} 
+          captchaCode={captchaCode} 
+          generateCaptcha={() => setCaptchaCode(Math.random().toString(36).substring(2, 8).toUpperCase())} 
+          inputCaptcha={inputCaptcha} setInputCaptcha={setInputCaptcha} 
+          isShaking={isShaking} 
+        />
+        <LoginModal 
+          isOpen={isLoginOpen} 
+          onClose={() => setIsLoginOpen(false)} 
+          onSubmit={handleLoginSubmit} 
+          loginForm={loginForm} setLoginForm={setLoginForm} 
+        />
+        <ProfileModal 
+          isOpen={isProfileOpen} 
+          user={user} 
+          onClose={() => setIsProfileOpen(false)} 
+        />
       </div>
     </Router>
   );
