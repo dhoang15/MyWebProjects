@@ -1,51 +1,41 @@
 const express = require('express');
 const dotenv = require('dotenv');
-const cors = require('cors'); // Hỗ trợ kết nối với Frontend
+const cors = require('cors');
 const connectDB = require('./config/db');
 
-// 1. Cấu hình biến môi trường (Phải đặt trên cùng)
+// 1. Cấu hình (Phải đặt trên cùng)
 dotenv.config();
-
-// 2. Kết nối tới Cơ sở dữ liệu MongoDB
-connectDB();
-
 const app = express();
 
-// 3. Middlewares hệ thống
-app.use(cors()); // Cho phép Frontend (React) gọi API từ Backend
-app.use(express.json()); // Cho phép Backend đọc dữ liệu JSON từ request body
-app.use(express.urlencoded({ extended: false })); // Hỗ trợ đọc dữ liệu từ form (nếu có)
+// 2. Kết nối Database
+connectDB();
 
-// 4. Khai báo các Tuyến đường (Routes)
-// Kết nối với các file trong thư mục routes/
+// 3. Middlewares (PHẢI ĐẶT TRƯỚC ROUTES)
+app.use(cors({
+    origin: '*', // Cho phép tất cả để test, hoặc điền đúng link Vercel của Hoàng
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true
+}));
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+
+// 4. Khai báo Routes (Sửa lại cho chuẩn đường dẫn)
 app.use('/api/auth', require('./routes/auth')); 
-app.use('/api/products', require('./routes/api')); // Mở ra khi bạn đã xong file api.js
+// SỬA TẠI ĐÂY: Dùng /api để link thành /api/products
+app.use('/api', require('./routes/api')); 
 
-// 5. Route kiểm tra trạng thái Server (Mặc định)
+// 5. Route mặc định
 app.get('/', (req, res) => {
     res.send('API của Chin Shop đang chạy... 🚀');
 });
 
-// 6. Xử lý lỗi 404 (Khi người dùng vào link không tồn tại)
-app.use((req, res, next) => {
-    res.status(404).json({ message: "Đường dẫn không tồn tại!" });
+// 6. Xử lý lỗi 404 (PHẢI ĐẶT CUỐI CÙNG SAU CÁC ROUTES)
+app.use((req, res) => {
+    res.status(404).json({ message: "Đường dẫn không tồn tại trên Server!" });
 });
 
-// Cho phép Frontend của bạn truy cập
-app.use(cors({
-    origin: ['https://chinshop-weld.vercel.app',
-        'http://localhost:3000' // Thay bằng link Vercel của bạn
-    ],
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    credentials: true
-}));
-
-// 7. Khởi chạy Server
+// 7. Khởi chạy
 const PORT = process.env.PORT || 5000;
-
 app.listen(PORT, () => {
-    console.log(`---`);
     console.log(`✅ Server đang chạy tại cổng: ${PORT}`);
-    console.log(`👉 Link thử nghiệm: http://localhost:${PORT}`);
-    console.log(`---`);
 });
