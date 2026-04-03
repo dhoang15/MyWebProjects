@@ -36,7 +36,9 @@ function App() {
   const [cardData, setCardData] = useState({ type: 'VIETTEL', amount: '10000', pin: '', serial: '' });
 
   // 🚀 1. TỰ ĐỘNG ĐĂNG NHẬP KHI F5 TRANG
+// 🚀 1. TỰ ĐỘNG ĐĂNG NHẬP VÀ FETCH DỮ LIỆU
   useEffect(() => {
+    // SỬA CHỖ NÀY: Dùng đúng key 'userData' đã lưu ở hàm Login
     const savedData = localStorage.getItem('userData'); 
     if (savedData) {
       try {
@@ -45,10 +47,33 @@ function App() {
         localStorage.removeItem('userData');
       }
     }
-    
-    // Fetch dữ liệu từ Backend
-    fetch(`${API_URL}/api/products`).then(res => res.json()).then(setProducts).catch(() => {});
-    fetch(`${API_URL}/api/auth/top-depositors`).then(res => res.json()).then(setTopDepositors).catch(() => {});
+
+    const baseUrl = import.meta.env.VITE_API_URL || 'https://mywebprojects-rxl0.onrender.com';
+    const cleanUrl = baseUrl.replace(/\/$/, ''); // Xóa dấu / ở cuối để tránh lỗi //api
+
+    // Fetch Products
+    fetch(`${cleanUrl}/api/products`)
+      .then(res => {
+        if (!res.ok) throw new Error();
+        return res.json();
+      })
+      .then(data => {
+        if (Array.isArray(data)) setProducts(data);
+        else setProducts([]);
+      })
+      .catch(() => setProducts([]));
+
+    // Fetch Top Depositors
+    fetch(`${cleanUrl}/api/auth/top-depositors`)
+      .then(res => {
+        if (!res.ok) throw new Error();
+        return res.json();
+      })
+      .then(data => {
+        if (Array.isArray(data)) setTopDepositors(data);
+        else setTopDepositors([]);
+      })
+      .catch(() => setTopDepositors([]));
   }, []);
 
   // 🚪 2. XỬ LÝ ĐĂNG XUẤT
