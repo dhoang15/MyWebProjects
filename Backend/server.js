@@ -30,8 +30,6 @@ app.get('/', (req, res) => {
 app.use((req, res, next) => {
     res.status(404).json({ message: "Đường dẫn không tồn tại!" });
 });
-// xử lý frontend 
-const cors = require('cors');
 
 // Cho phép Frontend của bạn truy cập
 app.use(cors({
