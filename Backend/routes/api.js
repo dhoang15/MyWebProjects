@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const Product = require('./models/Product'); // Đảm bảo Hoàng đã có file model này
-
+const Product = require('../models/product');
 // 🍎 1. LẤY DANH SÁCH TẤT CẢ SẢN PHẨM (ACC)
 router.get('/products', async (req, res) => {
     try {
