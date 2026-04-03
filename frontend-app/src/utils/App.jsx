@@ -16,9 +16,6 @@ import Header from "@/layout/Header.jsx";
 import Footer from "@/layout/Footer.jsx";
 import { LoginModal, RegisterModal, ProfileModal } from "@/page/AuthModals";
 
-// 🛠️ CẤU HÌNH API URL (Thay link này khi up lên Render)
-const API_URL = import.meta.env.VITE_API_URL || 'https://mywebprojects-rxl0.onrender.com';
-
 function App() {
   const [products, setProducts] = useState([]);
   const [user, setUser] = useState(null);
@@ -30,51 +27,54 @@ function App() {
   const [topDepositors, setTopDepositors] = useState([]); 
   
   const [regForm, setRegForm] = useState({ username: '', password: '', email: '' });
-  const [loginForm, setLoginForm] = useState({ username: '', password: '' }); // username này dùng để nhập Email/User tùy Backend
+  const [loginForm, setLoginForm] = useState({ username: '', password: '' });
   const [captchaCode, setCaptchaCode] = useState(Math.random().toString(36).substring(2, 8).toUpperCase());
   const [inputCaptcha, setInputCaptcha] = useState('');
   const [cardData, setCardData] = useState({ type: 'VIETTEL', amount: '10000', pin: '', serial: '' });
 
-  // 🚀 1. TỰ ĐỘNG ĐĂNG NHẬP KHI F5 TRANG
-// 🚀 1. TỰ ĐỘNG ĐĂNG NHẬP VÀ FETCH DỮ LIỆU
+  // 🌍 CẤU HÌNH URL SẠCH (Xử lý lỗi dấu gạch chéo //)
+  const getCleanUrl = () => {
+    const rawUrl = import.meta.env.VITE_API_URL || 'https://mywebprojects-rxl0.onrender.com';
+    return rawUrl.replace(/\/$/, ''); // Luôn xóa dấu / ở cuối link
+  };
+  const API_URL = getCleanUrl();
+
+  // 🚀 1. TỰ ĐỘNG ĐĂNG NHẬP VÀ FETCH DỮ LIỆU AN TOÀN
   useEffect(() => {
-    // SỬA CHỖ NÀY: Dùng đúng key 'userData' đã lưu ở hàm Login
+    // Phục hồi User từ LocalStorage
     const savedData = localStorage.getItem('userData'); 
     if (savedData) {
-      try {
-        setUser(JSON.parse(savedData));
-      } catch (e) {
-        localStorage.removeItem('userData');
-      }
+      try { setUser(JSON.parse(savedData)); } catch (e) { localStorage.removeItem('userData'); }
     }
 
-    const baseUrl = import.meta.env.VITE_API_URL || 'https://mywebprojects-rxl0.onrender.com';
-    const cleanUrl = baseUrl.replace(/\/$/, ''); // Xóa dấu / ở cuối để tránh lỗi //api
+    // Hàm fetch sản phẩm (Fix lỗi .filter)
+    const loadProducts = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/products`);
+        if (!res.ok) throw new Error("Server trả lỗi 404/500");
+        const data = await res.json();
+        // CỰC QUAN TRỌNG: Chỉ set nếu là mảng
+        setProducts(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error("Lỗi Fetch Products:", error);
+        setProducts([]); // Trả về mảng rỗng để web không bị trắng trang
+      }
+    };
 
-    // Fetch Products
-    fetch(`${cleanUrl}/api/products`)
-      .then(res => {
-        if (!res.ok) throw new Error();
-        return res.json();
-      })
-      .then(data => {
-        if (Array.isArray(data)) setProducts(data);
-        else setProducts([]);
-      })
-      .catch(() => setProducts([]));
+    // Hàm fetch Top nạp
+    const loadTop = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/auth/top-depositors`);
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data)) setTopDepositors(data);
+        }
+      } catch (e) { setTopDepositors([]); }
+    };
 
-    // Fetch Top Depositors
-    fetch(`${cleanUrl}/api/auth/top-depositors`)
-      .then(res => {
-        if (!res.ok) throw new Error();
-        return res.json();
-      })
-      .then(data => {
-        if (Array.isArray(data)) setTopDepositors(data);
-        else setTopDepositors([]);
-      })
-      .catch(() => setTopDepositors([]));
-  }, []);
+    loadProducts();
+    loadTop();
+  }, [API_URL]);
 
   // 🚪 2. XỬ LÝ ĐĂNG XUẤT
   const handleLogout = () => {
@@ -87,17 +87,15 @@ function App() {
   // 💳 3. XỬ LÝ NẠP THẺ
   const handleCardSubmit = async (e) => {
     e.preventDefault();
-    if (!user) return toast.error("Vui lòng đăng nhập để nạp thẻ!");
-    if (!cardData.pin || !cardData.serial) return toast.error("Vui lòng nhập đầy đủ mã thẻ và seri!");
-    
-    const loadId = toast.loading("Đang gửi thẻ lên hệ thống...");
+    if (!user) return toast.error("Vui lòng đăng nhập!");
+    const loadId = toast.loading("Đang gửi thẻ...");
     setTimeout(() => {
-      toast.success("Gửi thẻ thành công! Vui lòng chờ duyệt.", { id: loadId });
+      toast.success("Gửi thẻ thành công!", { id: loadId });
       setCardData({ ...cardData, pin: '', serial: '' });
     }, 2000);
   };
 
-  // 📝 4. XỬ LÝ ĐĂNG KÝ (Có mã Captcha)
+  // 📝 4. XỬ LÝ ĐĂNG KÝ
   const handleRegisterSubmit = async (e) => {
     e.preventDefault();
     if (inputCaptcha.toUpperCase() !== captchaCode) {
@@ -106,7 +104,6 @@ function App() {
       toast.error("Sai mã Captcha!"); 
       return;
     }
-
     const loadId = toast.loading("Đang tạo tài khoản...");
     try {
       const res = await fetch(`${API_URL}/api/auth/register`, {
@@ -116,20 +113,15 @@ function App() {
       });
       const data = await res.json();
       if (res.ok) {
-        toast.success("Đăng ký thành công! Đăng nhập ngay.", { id: loadId });
-        setIsRegisterOpen(false); 
-        setIsLoginOpen(true);
-        setRegForm({ username: '', password: '', email: '' });
-        setInputCaptcha('');
+        toast.success("Đăng ký thành công!", { id: loadId });
+        setIsRegisterOpen(false); setIsLoginOpen(true);
       } else { 
         toast.error(data.message || "Đăng ký thất bại!", { id: loadId }); 
       }
-    } catch (error) { 
-      toast.error("Lỗi kết nối máy chủ!", { id: loadId }); 
-    }
+    } catch (error) { toast.error("Lỗi kết nối máy chủ!", { id: loadId }); }
   };
 
-  // 🔑 5. XỬ LÝ ĐĂNG NHẬP (Lưu Token)
+  // 🔑 5. XỬ LÝ ĐĂNG NHẬP
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
     const loadId = toast.loading("Đang vào shop...");
@@ -137,38 +129,23 @@ function App() {
       const res = await fetch(`${API_URL}/api/auth/login`, {
         method: 'POST', 
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: loginForm.username, // Map 'username' của form vào 'email' của Backend
-          password: loginForm.password
-        })
+        body: JSON.stringify({ email: loginForm.username, password: loginForm.password })
       });
       const data = await res.json();
       if (res.ok) {
-        // Lưu cả Object user và Token
         localStorage.setItem('token', data.token);
         localStorage.setItem('userData', JSON.stringify(data));
-        
         setUser(data); 
         setIsLoginOpen(false);
-        setLoginForm({ username: '', password: '' });
         toast.success(`Chào mừng ${data.username}!`, { id: loadId });
-      } else { 
-        toast.error(data.message || "Sai tài khoản/mật khẩu!", { id: loadId }); 
-      }
-    } catch (error) { 
-      toast.error("Lỗi kết nối máy chủ!", { id: loadId }); 
-    }
+      } else { toast.error(data.message || "Sai tài khoản/mật khẩu!", { id: loadId }); }
+    } catch (error) { toast.error("Lỗi kết nối máy chủ!", { id: loadId }); }
   };
 
-  // 🛒 6. XỬ LÝ MUA ACC (Gửi kèm Token)
+  // 🛒 6. XỬ LÝ MUA ACC
   const handleBuy = async (item) => {
-    if (!user) {
-      toast.error("Vui lòng đăng nhập để mua Acc!");
-      setIsLoginOpen(true);
-      return;
-    }
-
-    const loadId = toast.loading("Đang xử lý giao dịch...");
+    if (!user) { toast.error("Vui lòng đăng nhập!"); setIsLoginOpen(true); return; }
+    const loadId = toast.loading("Đang xử lý...");
     try {
       const res = await fetch(`${API_URL}/api/buy`, {
         method: 'POST',
@@ -181,61 +158,49 @@ function App() {
       const data = await res.json();
       if (res.ok) {
         setUser({ ...user, balance: data.newBalance });
-        toast.success("Mua Acc thành công! Check lịch sử nhé.", { id: loadId });
-        // Cập nhật lại danh sách sản phẩm
-        fetch(`${API_URL}/api/products`).then(res => res.json()).then(setProducts);
-      } else {
-        toast.error(data.message || "Giao dịch thất bại!", { id: loadId });
-      }
-    } catch (error) {
-      toast.error("Lỗi kết nối máy chủ!", { id: loadId });
-    }
+        toast.success("Mua Acc thành công!", { id: loadId });
+        fetch(`${API_URL}/api/products`).then(r => r.json()).then(setProducts);
+      } else { toast.error(data.message || "Thất bại!", { id: loadId }); }
+    } catch (error) { toast.error("Lỗi kết nối!", { id: loadId }); }
   };
 
   return (
     <Router>
       <div className="min-h-screen pb-20 font-sans bg-fixed bg-cover bg-center" style={{ backgroundImage: "url('https://cdn.pixabay.com/photo/2016/01/27/15/25/space-1164579_1280.png')" }}>
         <Toaster position="top-center" />
-        
         <Header user={user} setIsRegisterOpen={setIsRegisterOpen} setIsLoginOpen={setIsLoginOpen} setIsProfileOpen={setIsProfileOpen} handleLogout={handleLogout} />
 
         <div className="max-w-7xl mx-auto px-4 mt-6">
            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              
-              {/* --- SIDEBAR: NẠP THẺ / ATM --- */}
               <div className="lg:col-span-4 bg-white rounded-lg shadow-xl overflow-hidden flex flex-col border border-gray-200 h-[380px] italic font-bold">
                  <div className="flex bg-gray-200">
                     <button onClick={() => setActiveTab('napThe')} className={`flex-1 py-3 text-[11px] uppercase ${activeTab === 'napThe' ? 'bg-red-600 text-white' : ''}`}>Nạp thẻ</button>
                     <button onClick={() => setActiveTab('chuyenKhoan')} className={`flex-1 py-3 text-[11px] uppercase ${activeTab === 'chuyenKhoan' ? 'bg-red-600 text-white' : ''}`}>ATM/MOMO</button>
                     <button onClick={() => setActiveTab('topNap')} className={`flex-1 py-3 text-[11px] uppercase ${activeTab === 'topNap' ? 'bg-red-600 text-white' : ''}`}>Top Nạp</button>
                  </div>
-                 
                  <div className="p-5 flex-1 bg-white overflow-y-auto custom-scrollbar border-b-2 border-black">
                   {activeTab === 'napThe' && (
                     <form onSubmit={handleCardSubmit} className="space-y-3 animate-in slide-in-from-left duration-300">
-                      <select value={cardData.type} onChange={(e) => setCardData({...cardData, type: e.target.value})} className="w-full bg-gray-50 border-2 border-black p-2 rounded-xl text-xs font-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] outline-none">
+                      <select value={cardData.type} onChange={(e) => setCardData({...cardData, type: e.target.value})} className="w-full bg-gray-50 border-2 border-black p-2 rounded-xl text-xs font-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] outline-none text-black">
                         <option value="VIETTEL">VIETTEL</option>
                         <option value="MOBIFONE">MOBIFONE</option>
                         <option value="VINAPHONE">VINAPHONE</option>
                         <option value="GARENA">GARENA</option>
                         <option value="ZING">ZING</option>
                       </select>
-                      <select value={cardData.amount} onChange={(e) => setCardData({...cardData, amount: e.target.value})} className="w-full bg-gray-50 border-2 border-black p-2 rounded-xl text-xs font-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] outline-none">
+                      <select value={cardData.amount} onChange={(e) => setCardData({...cardData, amount: e.target.value})} className="w-full bg-gray-50 border-2 border-black p-2 rounded-xl text-xs font-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] outline-none text-black">
                         <option value="10000">10,000đ</option>
                         <option value="50000">50,000đ</option>
                         <option value="100000">100,000đ</option>
                         <option value="500000">500,000đ</option>
                       </select>
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-2 gap-2 text-black">
                         <input type="text" value={cardData.pin} onChange={(e) => setCardData({...cardData, pin: e.target.value})} placeholder="Mã thẻ..." className="w-full border-2 border-black p-2 rounded-xl text-xs font-bold shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] outline-none" />
                         <input type="text" value={cardData.serial} onChange={(e) => setCardData({...cardData, serial: e.target.value})} placeholder="Số Seri..." className="w-full border-2 border-black p-2 rounded-xl text-xs font-bold shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] outline-none" />
                       </div>
-                      <button type="submit" className="w-full bg-red-600 text-white font-black py-3 rounded-2xl text-xs uppercase shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all border-2 border-black">
-                        🔥 NẠP THẺ NGAY
-                      </button>
+                      <button type="submit" className="w-full bg-red-600 text-white font-black py-3 rounded-2xl text-xs uppercase shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all border-2 border-black">🔥 NẠP THẺ NGAY</button>
                     </form>
                   )}
-
                   {activeTab === 'chuyenKhoan' && (
                     <div className="space-y-3 animate-in zoom-in duration-300">
                       <div className="bg-blue-600 border-2 border-black p-4 rounded-2xl shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-white">
@@ -248,14 +213,10 @@ function App() {
                           <p className="text-[9px] font-black text-black/60 uppercase">Nội dung nạp</p>
                           <p className="text-sm font-black text-red-600 uppercase">NAP {user ? user.username : 'CHINSHOP'}</p>
                         </div>
-                        <button onClick={() => {
-                          navigator.clipboard.writeText(`NAP ${user ? user.username : 'CHINSHOP'}`); 
-                          toast.success("Đã copy nội dung nạp!");
-                        }} className="bg-black text-white text-[10px] px-3 py-1 rounded font-black">COPY</button>
+                        <button onClick={() => { navigator.clipboard.writeText(`NAP ${user ? user.username : 'CHINSHOP'}`); toast.success("Đã copy!"); }} className="bg-black text-white text-[10px] px-3 py-1 rounded font-black">COPY</button>
                       </div>
                     </div>
                   )}
-
                   {activeTab === 'topNap' && (
                     <div className="space-y-2 animate-in slide-in-from-right duration-300">
                       {topDepositors.map((item, i) => (
@@ -271,8 +232,6 @@ function App() {
                   )}
                  </div>
               </div>
-
-              {/* --- BANNER --- */}
               <div className="lg:col-span-8 rounded-lg overflow-hidden relative h-[380px] bg-red-600 flex items-center justify-center">
                  <img src="/banner.png" className="absolute inset-0 w-full h-full object-cover opacity-80" alt="banner" />
                  <h1 className="relative z-10 text-6xl md:text-8xl font-black italic text-white drop-shadow-2xl animate-pulse">CHIN SHOP</h1>
@@ -280,7 +239,6 @@ function App() {
            </div>
         </div>
 
-        {/* --- MAIN CONTENT: ROUTES --- */}
         <main className="max-w-7xl mx-auto p-4 mt-4">
           <Routes>
             <Route path="/" element={<ShopContent products={products} handleBuy={handleBuy} />} />
@@ -292,31 +250,10 @@ function App() {
             <Route path="/quan-tri-vien-vip" element={<AdminPanel />} />
           </Routes>
         </main>
-
         <Footer />
-
-        {/* --- MODALS SYSTEM --- */}
-        <RegisterModal 
-          isOpen={isRegisterOpen} 
-          onClose={() => setIsRegisterOpen(false)} 
-          onSubmit={handleRegisterSubmit} 
-          regForm={regForm} setRegForm={setRegForm} 
-          captchaCode={captchaCode} 
-          generateCaptcha={() => setCaptchaCode(Math.random().toString(36).substring(2, 8).toUpperCase())} 
-          inputCaptcha={inputCaptcha} setInputCaptcha={setInputCaptcha} 
-          isShaking={isShaking} 
-        />
-        <LoginModal 
-          isOpen={isLoginOpen} 
-          onClose={() => setIsLoginOpen(false)} 
-          onSubmit={handleLoginSubmit} 
-          loginForm={loginForm} setLoginForm={setLoginForm} 
-        />
-        <ProfileModal 
-          isOpen={isProfileOpen} 
-          user={user} 
-          onClose={() => setIsProfileOpen(false)} 
-        />
+        <RegisterModal isOpen={isRegisterOpen} onClose={() => setIsRegisterOpen(false)} onSubmit={handleRegisterSubmit} regForm={regForm} setRegForm={setRegForm} captchaCode={captchaCode} generateCaptcha={() => setCaptchaCode(Math.random().toString(36).substring(2, 8).toUpperCase())} inputCaptcha={inputCaptcha} setInputCaptcha={setInputCaptcha} isShaking={isShaking} />
+        <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} onSubmit={handleLoginSubmit} loginForm={loginForm} setLoginForm={setLoginForm} />
+        <ProfileModal isOpen={isProfileOpen} user={user} onClose={() => setIsProfileOpen(false)} />
       </div>
     </Router>
   );
