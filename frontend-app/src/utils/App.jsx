@@ -27,7 +27,7 @@ function App() {
 
   // Auth States
   const [regForm, setRegForm] = useState({ username: '', password: '', email: '' });
-  const [loginForm, setLoginForm] = useState({ username: '', password: '' });
+  const [loginForm, setLoginForm] = useState({ loginKey: '', password: '' });
   const [captchaCode, setCaptchaCode] = useState("");
 
   const API_URL = (import.meta.env.VITE_API_URL || 'https://mywebprojects-rxl0.onrender.com').replace(/\/$/, '');
@@ -55,25 +55,36 @@ function App() {
     localStorage.clear(); setUser(null); toast.success("Đã đăng xuất!");
   };
 
-  const handleLoginSubmit = async (e) => {
+const handleLoginSubmit = async (e) => {
     e.preventDefault();
     const id = toast.loading("Đang vào shop...");
     try {
       const res = await fetch(`${API_URL}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: loginForm.username, password: loginForm.password })
+        // FIX TẠI ĐÂY: Dùng loginKey thay vì email
+        body: JSON.stringify({ 
+          loginKey: loginForm.loginKey, 
+          password: loginForm.password 
+        })
       });
+      
       const data = await res.json();
+      
       if (res.ok) {
         localStorage.setItem('token', data.token);
         localStorage.setItem('userData', JSON.stringify(data));
-        setUser(data); setIsLoginOpen(false);
+        setUser(data); 
+        setIsLoginOpen(false);
         toast.success(`Chào ${data.username}!`, { id });
-      } else { toast.error(data.message, { id }); }
-    } catch (err) { toast.error("Lỗi kết nối!", { id }); }
+      } else { 
+        // Backend trả về message gì thì hiện đúng cái đó (ví dụ: "Tài khoản không tồn tại")
+        toast.error(data.message || "Lỗi đăng nhập!", { id }); 
+      }
+    } catch (err) { 
+      toast.error("Lỗi kết nối Server!", { id }); 
+    }
   };
-
   return (
     <Router>
       <div className="min-h-screen pb-20 font-sans bg-fixed bg-cover bg-center text-black" style={{ backgroundImage: "url('https://cdn.pixabay.com/photo/2016/01/27/15/25/space-1164579_1280.png')" }}>
