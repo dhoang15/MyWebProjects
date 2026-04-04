@@ -40,31 +40,41 @@ exports.register = async (req, res) => {
 
 exports.login = async (req, res) => {
     try {
+        // Hứng biến loginKey từ Frontend gửi lên
         const { loginKey, password } = req.body; 
 
-        const user = await User.findOne({ $or: [{ email: loginKey }, { username: loginKey }] });
-        if (!user) {
-            return res.status(400).json({ message: 'Email hoặc mật khẩu không đúng!' });
+        if (!loginKey || !password) {
+            return res.status(400).json({ message: 'Vui lòng nhập tài khoản và mật khẩu!' });
         }
 
+        // Dùng $or để tìm: Nếu loginKey khớp với username HOẶC khớp với email
+        const user = await User.findOne({ 
+            $or: [
+                { email: loginKey }, 
+                { username: loginKey }
+            ] 
+        });
+
+        if (!user) {
+            return res.status(400).json({ message: 'Tài khoản hoặc mật khẩu không đúng!' });
+        }
+
+        // So sánh mật khẩu (nhớ dùng P hoa nhé Hoàng)
         const isMatch = await comparePassword(password, user.password);
         if (!isMatch) {
-            return res.status(400).json({ message: 'Email hoặc mật khẩu không đúng!' });
+            return res.status(400).json({ message: 'Tài khoản hoặc mật khẩu không đúng!' });
         }
 
-        // FIX LỖI: Xóa chữ 'a' thừa ở cuối dòng này
         const token = generateToken(user._id);
         
         res.json({ 
             message: "Đăng nhập thành công!",
             username: user.username,
-            email: user.email,
             balance: user.balance,
-            id: user._id,
             token 
         });
     } catch (error) {
         console.error("LỖI ĐĂNG NHẬP:", error);
-        res.status(500).json({ message: 'Lỗi hệ thống khi đăng nhập' });
+        res.status(500).json({ message: 'Lỗi hệ thống' });
     }
 };
