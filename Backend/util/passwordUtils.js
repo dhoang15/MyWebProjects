@@ -9,5 +9,5 @@ const comparePassword = async (password, hashedPassword) => {
     return await bcrypt.compare(password, hashedPassword);
 }
 
-// Xuất ra với tên hàm có chữ P hoa
+// Xuất ra với tên hàm có chữ P hoa đó
 module.exports = { hashPassword, comparePassword };
