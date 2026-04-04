@@ -26,7 +26,7 @@ function App() {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   // Auth States
-  const [regForm, setRegForm] = useState({ username: '', password: '', email: '' });
+  // const [regForm, setRegForm] = useState({ username: '', password: '', email: '' });
   const [loginForm, setLoginForm] = useState({loginKey: '', password: '' });
   const [captchaCode, setCaptchaCode] = useState("");
 
