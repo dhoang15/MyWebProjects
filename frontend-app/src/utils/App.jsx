@@ -33,11 +33,11 @@ function App() {
   const API_URL = (import.meta.env.VITE_API_URL || 'https://mywebprojects-rxl0.onrender.com').replace(/\/$/, '');
 
   useEffect(() => {
-    // 1. Load User
+    // 1. Load User từ LocalStorage
     const saved = localStorage.getItem('userData');
     if (saved) try { setUser(JSON.parse(saved)); } catch(e) { localStorage.removeItem('userData'); }
 
-    // 2. Fetch Data
+    // 2. Fetch Data ban đầu
     const loadData = async () => {
       try {
         const [pRes, tRes] = await Promise.all([
@@ -46,23 +46,27 @@ function App() {
         ]);
         if (pRes.ok) setProducts(await pRes.json());
         if (tRes.ok) setTopDepositors(await tRes.json());
-      } catch (err) { setProducts([]); }
+      } catch (err) { 
+        console.error("Lỗi tải dữ liệu:", err);
+        setProducts([]); 
+      }
     };
     loadData();
   }, [API_URL]);
 
   const handleLogout = () => {
-    localStorage.clear(); setUser(null); toast.success("Đã đăng xuất!");
+    localStorage.clear(); 
+    setUser(null); 
+    toast.success("Đã đăng xuất khỏi CHIN SHOP!");
   };
 
-const handleLoginSubmit = async (e) => {
+  const handleLoginSubmit = async (e) => {
     e.preventDefault();
     const id = toast.loading("Đang vào shop...");
     try {
       const res = await fetch(`${API_URL}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        // FIX TẠI ĐÂY: Dùng loginKey thay vì email
         body: JSON.stringify({ 
           loginKey: loginForm.loginKey, 
           password: loginForm.password 
@@ -76,22 +80,31 @@ const handleLoginSubmit = async (e) => {
         localStorage.setItem('userData', JSON.stringify(data));
         setUser(data); 
         setIsLoginOpen(false);
-        toast.success(`Chào ${data.username}!`, { id });
+        setLoginForm({ loginKey: '', password: '' }); // Xóa trắng form
+        toast.success(`Chào mừng ${data.username} trở lại!`, { id });
       } else { 
-        // Backend trả về message gì thì hiện đúng cái đó (ví dụ: "Tài khoản không tồn tại")
-        toast.error(data.message || "Lỗi đăng nhập!", { id }); 
+        toast.error(data.message || "Tài khoản hoặc mật khẩu sai!", { id }); 
       }
     } catch (err) { 
-      toast.error("Lỗi kết nối Server!", { id }); 
+      toast.error("Không thể kết nối tới Server Render!", { id }); 
     }
   };
+
   return (
     <Router>
-      <div className="min-h-screen pb-20 font-sans bg-fixed bg-cover bg-center text-black" style={{ backgroundImage: "url('https://cdn.pixabay.com/photo/2016/01/27/15/25/space-1164579_1280.png')" }}>
+      <div className="min-h-screen pb-20 font-sans bg-fixed bg-cover bg-center text-black" 
+           style={{ backgroundImage: "url('https://cdn.pixabay.com/photo/2016/01/27/15/25/space-1164579_1280.png')" }}>
+        
         <Toaster position="top-center" />
-        <Header user={user} setIsRegisterOpen={setIsRegisterOpen} setIsLoginOpen={setIsLoginOpen} setIsProfileOpen={setIsProfileOpen} handleLogout={handleLogout} />
+        
+        <Header 
+          user={user} 
+          setIsRegisterOpen={setIsRegisterOpen} 
+          setIsLoginOpen={setIsLoginOpen} 
+          setIsProfileOpen={setIsProfileOpen} 
+          handleLogout={handleLogout} 
+        />
 
-        {/* CỐ ĐỊNH SIDEBAR & BANNER Ở TRÊN */}
         <div className="max-w-7xl mx-auto px-4 mt-6">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <div className="lg:col-span-4">
@@ -99,15 +112,16 @@ const handleLoginSubmit = async (e) => {
             </div>
             <div className="lg:col-span-8 rounded-3xl overflow-hidden relative h-[380px] bg-red-600 flex items-center justify-center border-4 border-black shadow-2xl">
               <img src="/banner.png" className="absolute inset-0 w-full h-full object-cover opacity-80" alt="banner" />
-              <h1 className="relative z-10 text-6xl md:text-8xl font-black italic text-white drop-shadow-[5px_5px_0px_rgba(0,0,0,1)] animate-pulse">CHIN SHOP</h1>
+              <h1 className="relative z-10 text-6xl md:text-8xl font-black italic text-white drop-shadow-[5px_5px_0px_rgba(0,0,0,1)] animate-pulse uppercase">
+                CHIN SHOP
+              </h1>
             </div>
           </div>
         </div>
 
-        {/* NỘI DUNG THAY ĐỔI THEO ROUTE */}
         <main className="max-w-7xl mx-auto p-4 mt-4">
           <Routes>
-            <Route path="/" element={<ShopContent prsoducts={products} />} />
+            <Route path="/" element={<ShopContent products={products} />} />
             <Route path="/category/:categoryName" element={<CategoryPage products={products} />} />
             <Route path="/product/:id" element={<ProductDetail products={products} />} />
             <Route path="/history" element={<HistoryPage user={user} />} />
@@ -119,10 +133,28 @@ const handleLoginSubmit = async (e) => {
 
         <Footer />
 
-        {/* MODALS */}
-        <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} onSubmit={handleLoginSubmit} loginForm={loginForm} setLoginForm={setLoginForm} />
-        <RegisterModal isOpen={isRegisterOpen} onClose={() => setIsRegisterOpen(false)} regForm={regForm} setRegForm={setRegForm} captchaCode={captchaCode} generateCaptcha={() => setCaptchaCode(Math.random().toString(36).substring(2, 8).toUpperCase())} />
-        <ProfileModal isOpen={isProfileOpen} user={user} onClose={() => setIsProfileOpen(false)} />
+        <LoginModal 
+          isOpen={isLoginOpen} 
+          onClose={() => setIsLoginOpen(false)} 
+          onSubmit={handleLoginSubmit} 
+          loginForm={loginForm} 
+          setLoginForm={setLoginForm} 
+        />
+        
+        <RegisterModal 
+          isOpen={isRegisterOpen} 
+          onClose={() => setIsRegisterOpen(false)} 
+          regForm={regForm} 
+          setRegForm={setRegForm} 
+          captchaCode={captchaCode} 
+          generateCaptcha={() => setCaptchaCode(Math.random().toString(36).substring(2, 8).toUpperCase())} 
+        />
+        
+        <ProfileModal 
+          isOpen={isProfileOpen} 
+          user={user} 
+          onClose={() => setIsProfileOpen(false)} 
+        />
       </div>
     </Router>
   );

@@ -6,25 +6,28 @@ exports.register = async (req, res) => {
     try {
         const { username, email, password } = req.body;
         
-        // 1. Kiểm tra trùng lặp
+        if (!username || !email || !password) {
+            return res.status(400).json({ message: 'Vui lòng điền đầy đủ thông tin!' });
+        }
+        if (password.length < 6) {
+            return res.status(400).json({ message: 'Mật khẩu phải từ 6 ký tự trở lên!' });
+        }
+
         const existingUser = await User.findOne({ $or: [{ email }, { username }] });
         if (existingUser) {
             return res.status(400).json({ message: 'Tài khoản hoặc Email đã tồn tại!' });
         }
 
-        // 2. Mã hóa mật khẩu
         const hashedPassword = await hashPassword(password);
         
-        // 3. Lưu User mới
         const newUser = new User({ 
             username, 
             email, 
             password: hashedPassword,
-            balance: 0 // Khởi tạo số dư bằng 0 cho khách mới
+            balance: 0 
         });
         await newUser.save();
         
-        // 4. Tạo Token
         const token = generateToken(newUser._id); 
         
         res.status(201).json({ 
@@ -40,14 +43,12 @@ exports.register = async (req, res) => {
 
 exports.login = async (req, res) => {
     try {
-        // Hứng biến loginKey từ Frontend gửi lên
         const { loginKey, password } = req.body; 
 
         if (!loginKey || !password) {
             return res.status(400).json({ message: 'Vui lòng nhập tài khoản và mật khẩu!' });
         }
 
-        // Dùng $or để tìm: Nếu loginKey khớp với username HOẶC khớp với email
         const user = await User.findOne({ 
             $or: [
                 { email: loginKey }, 
@@ -59,7 +60,6 @@ exports.login = async (req, res) => {
             return res.status(400).json({ message: 'Tài khoản hoặc mật khẩu không đúng!' });
         }
 
-        // So sánh mật khẩu (nhớ dùng P hoa nhé Hoàng)
         const isMatch = await comparePassword(password, user.password);
         if (!isMatch) {
             return res.status(400).json({ message: 'Tài khoản hoặc mật khẩu không đúng!' });
@@ -69,7 +69,9 @@ exports.login = async (req, res) => {
         
         res.json({ 
             message: "Đăng nhập thành công!",
+            id: user._id,
             username: user.username,
+            email: user.email,
             balance: user.balance,
             token 
         });
