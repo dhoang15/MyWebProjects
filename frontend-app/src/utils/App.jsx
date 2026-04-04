@@ -27,7 +27,7 @@ function App() {
 
   // Auth States
   const [regForm, setRegForm] = useState({ username: '', password: '', email: '' });
-  const [loginForm, setLoginForm] = useState({ loginKey: '', password: '' });
+  const [loginForm, setLoginForm] = useState({loginKey: '', password: '' });
   const [captchaCode, setCaptchaCode] = useState("");
 
   const API_URL = (import.meta.env.VITE_API_URL || 'https://mywebprojects-rxl0.onrender.com').replace(/\/$/, '');
