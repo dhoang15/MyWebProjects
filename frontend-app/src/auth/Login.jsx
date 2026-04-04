@@ -23,6 +23,8 @@ export const LoginModal = ({ isOpen, onClose, onSubmit, loginForm, setLoginForm 
           {/* Ô nhập Tài khoản/Email */}
           <input 
             type="text" 
+            id="loginKey"
+            name="loginKey"
             placeholder="Tên tài khoản hoặc Email" 
             required 
             value={loginForm.loginKey || ''} // Thêm value để đồng bộ
@@ -33,8 +35,11 @@ export const LoginModal = ({ isOpen, onClose, onSubmit, loginForm, setLoginForm 
           {/* Ô nhập Mật khẩu */}
           <input 
             type="password" 
+            id="password"
+            name="password"
             placeholder="Mật khẩu" 
             required 
+            autoComplete="current-password"
             value={loginForm.password || ''} // Thêm value để đồng bộ
             className="w-full border-2 border-black p-4 rounded-xl text-sm font-bold outline-none focus:bg-yellow-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all" 
             onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })} 
