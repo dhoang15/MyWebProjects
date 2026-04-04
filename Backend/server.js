@@ -24,7 +24,7 @@ app.use('/api/auth', require('./routes/auth'));
 // SỬA TẠI ĐÂY: Dùng /api để link thành /api/products
 app.use('/api', require('./routes/api')); 
 
-// 5. Route mặc định
+// 5. Route mặc định    
 app.get('/', (req, res) => {
     res.send('API của Chin Shop đang chạy... 🚀');
 });

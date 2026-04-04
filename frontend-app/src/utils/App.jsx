@@ -107,7 +107,7 @@ const handleLoginSubmit = async (e) => {
         {/* NỘI DUNG THAY ĐỔI THEO ROUTE */}
         <main className="max-w-7xl mx-auto p-4 mt-4">
           <Routes>
-            <Route path="/" element={<ShopContent products={products} />} />
+            <Route path="/" element={<ShopContent prsoducts={products} />} />
             <Route path="/category/:categoryName" element={<CategoryPage products={products} />} />
             <Route path="/product/:id" element={<ProductDetail products={products} />} />
             <Route path="/history" element={<HistoryPage user={user} />} />
